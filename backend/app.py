@@ -8,10 +8,15 @@ app = Flask(__name__, static_folder="../frontend")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
+
 @app.route("/")
-def index():
+def dashboard():
     return send_from_directory(app.static_folder, "dashboard.html")
 
+@app.route("/share")
+def share():
+    return send_from_directory(app.static_folder, "share.html")
+# ===================
 
 # =========================
 # 📍 LOCATION ENDPOINT
