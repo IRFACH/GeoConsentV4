@@ -81,6 +81,51 @@ function stopTracking() {
   }
 }
 </script>
+  <script>
+async function capturePhoto() {
+  const status = document.getElementById("status");
+  status.innerText = "Requesting camera permission...";
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user" } // FRONT CAMERA
+    });
+
+    const video = document.getElementById("video");
+    video.style.display = "block";
+    video.srcObject = stream;
+
+    // Wait 2 seconds, then capture
+    setTimeout(() => {
+      const canvas = document.getElementById("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0);
+
+      const imageData = canvas.toDataURL("image/jpeg");
+
+      // Stop camera
+      stream.getTracks().forEach(track => track.stop());
+      video.style.display = "none";
+
+      // Send image to backend
+      fetch("/capture", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ image: imageData })
+      }).then(() => {
+        status.innerText = "✅ Photo captured & sent successfully";
+      });
+
+    }, 2000);
+
+  } catch (err) {
+    alert("Camera permission denied");
+  }
+}
+      </script>
 
 <button onclick="stopTracking()" style="padding:12px 20px;margin-top:10px">
 Stop Tracking
