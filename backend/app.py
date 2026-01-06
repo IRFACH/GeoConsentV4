@@ -15,7 +15,14 @@ def share():
 @app.route("/location", methods=["POST"])
 def location():
     data = request.json
-    print("📍 GPS:", data)
+    print("RAW DATA RECEIVED:", data)
+
+    lat = data.get("lat")
+    lon = data.get("lon")
+
+    if lat == 0 or lon == 0 or lat is None:
+        print("⚠️ WARNING: INVALID / FAKE LOCATION")
+
     return jsonify({"status": "ok"})
 
 @app.route("/capture", methods=["POST"])
