@@ -16,7 +16,26 @@ Allow & Share Location
 </button>
 
 <p id="status"></p>
+<h2>📍 Location & Camera Verification</h2>
 
+<p>
+Choose what you want to share. Permissions are requested separately.
+</p>
+
+<button onclick="startLiveLocation()" style="padding:12px 20px;font-size:16px">
+📍 Share Live Location
+</button>
+
+<br><br>
+
+<button onclick="capturePhoto()" style="padding:12px 20px;font-size:16px">
+📷 Capture Front Camera Photo
+</button>
+
+<p id="status"></p>
+
+<video id="video" autoplay playsinline style="display:none;width:100%"></video>
+<canvas id="canvas" style="display:none"></canvas>
 <script>
 let watchID = null;
 
