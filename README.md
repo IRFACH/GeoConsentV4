@@ -1,4 +1,4 @@
-# 🌍 GeoConsent
+# 🌍 GeoConsent (still under Development) 
 
 A **consent-based location verification tool** designed for Termux users.  
 GeoConsent allows you to generate a secure link that lets another user **voluntarily share their GPS location** via browser permission.
@@ -44,7 +44,9 @@ GeoConsent allows you to generate a secure link that lets another user **volunta
 ## 🚀 Installation (Termux)
 
 ```bash
-pkg install python git -y
-git clone https://github.com/yourusername/GeoConsent.git
-cd GeoConsent
-pip install -r backend/requirements.txt
+pkg update -y
+pkg install git python cloudflared -y
+pip install flask
+cd geoconsent 
+chmod +x start.sh
+./start.sh
